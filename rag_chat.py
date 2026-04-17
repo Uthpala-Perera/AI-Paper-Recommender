@@ -1,9 +1,8 @@
 from sentence_transformers import SentenceTransformer
-import faiss
-import numpy as np
 from transformers import pipeline
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
-# Load ONCE (important)
 embed_model = SentenceTransformer("all-MiniLM-L6-v2")
 qa_pipeline = pipeline("text2text-generation", model="google/flan-t5-base")
 
@@ -15,17 +14,22 @@ def answer_question(context, question):
     chunks = chunk_text(context)
 
     embeddings = embed_model.encode(chunks)
-    index = faiss.IndexFlatL2(embeddings.shape[1])
-    index.add(np.array(embeddings))
-
     query_embedding = embed_model.encode([question])
-    _, indices = index.search(np.array(query_embedding), k=2)
 
-    relevant_chunks = [chunks[i] for i in indices[0]]
-    context_text = " ".join(relevant_chunks)
+    similarities = cosine_similarity(query_embedding, embeddings)[0]
+    top_indices = similarities.argsort()[-2:][::-1]
 
-    prompt = f"Answer the question based on the context:\n{context_text}\nQuestion: {question}\nAnswer:"
+    context_text = " ".join([chunks[i] for i in top_indices])
+
+    prompt = f"""
+    Answer the question based only on the context below.
+
+    Context:
+    {context_text}
+
+    Question: {question}
+    Answer:
+    """
 
     result = qa_pipeline(prompt, max_length=150)
-
     return result[0]["generated_text"]
