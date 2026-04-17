@@ -1,21 +1,21 @@
 import pandas as pd
-import numpy as np
-import faiss
 from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
-# Load everything once
 df = pd.read_csv("cleaned_papers.csv")
-index = faiss.read_index("faiss_index.index")
+embeddings = np.load("embeddings.npy")
+
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 def recommend_papers(query, top_k=5):
     query_embedding = model.encode([query])
-    
-    distances, indices = index.search(np.array(query_embedding), top_k)
+
+    similarities = cosine_similarity(query_embedding, embeddings)[0]
+    top_indices = similarities.argsort()[-top_k:][::-1]
 
     results = []
-
-    for idx in indices[0]:
+    for idx in top_indices:
         results.append({
             "title": df.iloc[idx]["title"],
             "abstract": df.iloc[idx]["abstract"],
