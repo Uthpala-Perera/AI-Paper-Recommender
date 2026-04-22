@@ -30,6 +30,10 @@ An advanced AI-powered research assistant that uses transformer-based semantic s
 3. FAISS performs similarity search
 4. LLM generates summaries and answers
 
+## Authors
+
+KAUS Perera
+
 ## Future Improvements
 
 - Multi-paper chat system
